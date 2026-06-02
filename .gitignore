@@ -1,0 +1,37 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/raw/*.csv
+data/processed/*.csv
+artifacts/*.keras
+artifacts/*.joblib
+artifacts/*.pkl
+artifacts/*.csv
+artifacts/*.json
+
+# Data (do not commit large raw or processed CSVs)
+data/raw/
+data/processed/
+
+# Models and artifacts
+models/
+artifacts/
+*.pt
+*.pkl
+*.joblib
+
+# Outputs / visualizations
+outputs/
+
+# Notebooks
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+*.pem
+*.key
+
