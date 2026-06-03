@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 import pandas as pd
+import numpy as np
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
@@ -22,26 +23,26 @@ def to_datetime_index(df, guess_col=None):
     If the index looks like a timestamp, convert it. Otherwise, try guess_col.
     Returns dataframe with datetime index (not tz-converted).
     """
-    # If index is not datetime, try converting
+
     try:
         if not pd.api.types.is_datetime64_any_dtype(df.index):
-            # try to parse the first column as datetime
+
             if guess_col and guess_col in df.columns:
                 df[guess_col] = pd.to_datetime(df[guess_col], errors='coerce')
                 df = df.set_index(guess_col)
             else:
-                # try parsing the existing index values
+
                 df.index = pd.to_datetime(df.index, errors='coerce')
     except Exception:
         logger.exception('Error converting to datetime index')
 
-    # Drop rows without valid index
+
     df = df[~df.index.isna()].copy()
     return df
 
 
 def normalize_timezone_to_utc(idx):
-    # Ensure index is datetime and timezone-aware UTC
+
     idx = pd.to_datetime(idx)
     if idx.tz is None:
         idx = idx.tz_localize('UTC')
@@ -58,18 +59,18 @@ def main():
         logger.error('Sentiment file not found: %s', SENT_PATH)
         sys.exit(1)
 
-    # Read price (may have index as first column)
+
     price = pd.read_csv(PRICE_PATH, parse_dates=[0], index_col=0)
     sentiment = pd.read_csv(SENT_PATH, parse_dates=[0], index_col=0)
 
     logger.info('price shape: %s', price.shape)
     logger.info('sentiment shape: %s', sentiment.shape)
 
-    # Ensure datetime index on both
+
     price = to_datetime_index(price)
     sentiment = to_datetime_index(sentiment)
 
-    # Normalize both indices to UTC tz-aware
+
     try:
         price.index = normalize_timezone_to_utc(price.index)
     except Exception:
@@ -82,26 +83,37 @@ def main():
         sentiment.index = pd.to_datetime(sentiment.index)
         sentiment.index = sentiment.index.tz_localize('UTC')
 
-    # Left join sentiment onto price using the hourly timestamp
+
+    sentiment['weighted_sentiment'] = sentiment['sentiment_score'] * np.log1p(sentiment['likes'] + sentiment['retweets'] + 1.0)
+
+
     merged = price.join(sentiment, how='left', rsuffix='_sent')
 
-    # Fill missing sentiment fields per spec
-    for col in ['sentiment_score', 'tweet_count', 'likes', 'retweets']:
+
+    if 'sentiment_score' not in merged.columns:
+        merged['sentiment_score'] = 0.0
+    merged['sentiment_score'] = merged['sentiment_score'].ffill().fillna(0.0)
+
+    if 'weighted_sentiment' not in merged.columns:
+        merged['weighted_sentiment'] = 0.0
+    merged['weighted_sentiment'] = merged['weighted_sentiment'].ffill().fillna(0.0)
+
+    for col in ['tweet_count', 'likes', 'retweets']:
         if col not in merged.columns:
             merged[col] = 0
         merged[col] = merged[col].fillna(0)
 
-    # Save merged
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     merged.to_csv(OUT_PATH)
 
-    # Reporting
+
     print('price shape', price.shape)
     print('sentiment shape', sentiment.shape)
     print('merged shape', merged.shape)
     print('\ncolumns:')
     print(merged.columns.tolist())
-    # Count rows where sentiment matched (tweet_count > 0)
+
     matched = int((merged['tweet_count'] > 0).sum()) if 'tweet_count' in merged.columns else 0
     print('\nsentiment eşleşen satır sayısı:', matched)
     print('\nilk 5 satır:')

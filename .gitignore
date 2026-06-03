@@ -22,7 +22,9 @@ artifacts/
 *.joblib
 
 # Outputs / visualizations
-outputs/
+outputs/*
+!outputs/visualizations/
+!outputs/visualizations/dashboard/
 
 # Notebooks
 .ipynb_checkpoints

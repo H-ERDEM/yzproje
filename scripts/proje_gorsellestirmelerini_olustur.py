@@ -22,22 +22,15 @@ def read_results(fname):
     return None
 
 
-def plot_metric_comparison(dfs, metric, outname):
-    plt.figure()
-    models = []
-    values = []
-    for name, df in dfs.items():
-        if df is None:
-            continue
-        if metric in df.columns:
-            models.append(name)
-            values.append(df[metric].iloc[0])
-    if not models:
+def plot_metric_comparison(df_res, metric, outname):
+    if df_res is None or metric not in df_res.columns:
         logger.warning('No data for metric %s', metric)
         return
-    plt.bar(models, values)
+    plt.figure(figsize=(8,4))
+    plt.bar(df_res['model'], df_res[metric], color=['#1f2833', '#66fcf1', '#45f3ff', '#ff007f', '#a855f7'][:len(df_res)])
     plt.ylabel(metric)
     plt.title(f'{metric} comparison')
+    plt.xticks(rotation=15, ha='right')
     plt.tight_layout()
     outpath = os.path.join(VIS_DIR, outname)
     plt.savefig(outpath)
@@ -59,34 +52,42 @@ def plot_timeseries(df, col, outname, title=None):
 
 
 def main():
-    # Read result tables
+
     baseline = read_results('baseline_results.csv')
     lstm = read_results('lstm_results.csv')
     cnn = read_results('cnn_bilstm_results.csv')
+    ensemble = read_results('ensemble_results.csv')
 
-    dfs = {'Baseline': baseline, 'LSTM': lstm, 'CNN_BiLSTM': cnn}
+    res_list = []
+    for df in [baseline, lstm, cnn, ensemble]:
+        if df is not None:
+            res_list.append(df)
+            
+    if res_list:
+        all_res = pd.concat(res_list, ignore_index=True)
 
-    # Metrics comparisons
-    plot_metric_comparison(dfs, 'RMSE', 'comparison_rmse.png')
-    plot_metric_comparison(dfs, 'MAE', 'comparison_mae.png')
-    plot_metric_comparison(dfs, 'R2', 'comparison_r2.png')
+        plot_metric_comparison(all_res, 'RMSE', 'comparison_rmse.png')
+        plot_metric_comparison(all_res, 'MAE', 'comparison_mae.png')
+        plot_metric_comparison(all_res, 'R2', 'comparison_r2.png')
+    else:
+        logger.warning('No results found to compare.')
 
-    # Time series from final_multimodal_dataset
+
     data_path = os.path.join(ROOT, 'data', 'processed', 'final_multimodal_dataset.csv')
     if os.path.exists(data_path):
         df = pd.read_csv(data_path, index_col=0, parse_dates=[0])
-        # ensure columns exist
+
         if 'close' in df.columns:
             plot_timeseries(df, 'close', 'timeseries_close.png', 'Bitcoin Close Price')
         if 'rsi' in df.columns:
             plot_timeseries(df, 'rsi', 'timeseries_rsi.png', 'RSI')
-        # sentiment_score may be present
+
         if 'sentiment_score' in df.columns:
             plot_timeseries(df, 'sentiment_score', 'timeseries_sentiment.png', 'Sentiment Score')
     else:
         logger.warning('final_multimodal_dataset.csv not found: %s', data_path)
 
-    # Re-save LSTM training loss plot into visualizations if exists
+
     lstm_loss_src = os.path.join(OUT_DIR, 'lstm_training_loss.png')
     lstm_loss_dst = os.path.join(VIS_DIR, 'lstm_training_loss.png')
     if os.path.exists(lstm_loss_src):
@@ -96,7 +97,7 @@ def main():
     else:
         logger.warning('LSTM loss plot not found: %s', lstm_loss_src)
 
-    # List created files
+
     files = glob.glob(os.path.join(VIS_DIR, '*'))
     print('Created visualization files:')
     for f in files:
