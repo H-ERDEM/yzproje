@@ -12,7 +12,7 @@ Proje, heterojen veri kaynaklarının işlenmesi, zamansal hizalanması, multimo
 ```text
        ┌────────────────────────┐      ┌─────────────────────────┐
        │   Bitcoin Fiyat Verisi │      │ Twitter Tweet Veri Seti │
-   │ (1-dakikalık Ham Veri) │      │   (~200.000 örnek tweet) │
+       │ (1-dakikalık Ham Veri) │      │   (~200.000 örnek tweet)│
        └───────────┬────────────┘      └────────────┬────────────┘
                    │                                │
                    ▼ (Saatlik Resample)             ▼ (Text Temizleme)
