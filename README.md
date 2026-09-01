@@ -65,7 +65,7 @@ Proje, heterojen veri kaynaklarının işlenmesi, zamansal hizalanması, multimo
 ## 1. Teorik Altyapı ve Matematiksel Formülasyon
 
 ### 1.1. Getiri ve Hedef Volatilite Hesaplaması
-Zaman serisi fiyat kestiriminde doğrudan fiyat tahmini yerine volatilite tahmini risk yöneti### 1.3. Doğal Dil İşleme ve FinBERT Tabanlı Duygu Analizi
+Zaman serisi fiyat kestiriminde doğrudan fiyat tahmini yerine volatilite tahmini risk yöneti 1.3. Doğal Dil İşleme ve FinBERT Tabanlı Duygu Analizi
 Metinsel veri kaynağından finansal duygu analizi yapabilmek için finansal korpuslar üzerinde özel olarak eğitilmiş **FinBERT** (`ProsusAI/finbert`) modeli tercih edilmiştir. Model, girdi olarak verilen tweet metnini üç sınıfa olasılıksal olarak atar: Pozitif ($p_{pos}$), Negatif ($p_{neg}$) ve Nötr ($p_{neu}$). 
 
 Tekil bir tweet için nihai duygu skoru ($s_{tweet}$) şu şekilde formüle edilmiştir:
